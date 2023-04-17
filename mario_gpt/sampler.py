@@ -184,6 +184,7 @@ class GPTSampler:
         num_steps: int = 1,
         encoder_hidden_states: torch.Tensor = None,
         return_tensor: bool = False,
+        height: int = 14,
     ):
         self.mario_lm.eval()
         context_len = self.context_len - 28
@@ -226,11 +227,14 @@ class GPTSampler:
                 bar = np.arange(num_steps)
             else:
                 bar = tqdm(np.arange(num_steps))
+
+            print(f"Height: {height}")
             with torch.no_grad():
                 for i in bar:
                     inp = out_tensor * 1
                     if len(out_tensor.shape) > 0 and out_tensor.shape[-1] > context_len:
-                        diff = inp.shape[-1] % 14  # height of mario level
+                        #diff = inp.shape[-1] % 14  # height of mario level
+                        diff = inp.shape[-1] % height  # height of mario level
                         ctx = context_len + diff
                         inp = inp[:, -ctx:] * 1
                     next_tokens, encoder_hidden_states = self.step(
