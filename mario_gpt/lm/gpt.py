@@ -16,6 +16,11 @@ from mario_gpt.lm.base import BaseMarioLM
 from mario_gpt.prompter import Prompter
 from mario_gpt.sampler import GPTSampler, SampleOutput
 
+# Change some defaults here ---
+from mario_gpt.flower_prompter import FlowerPrompter
+
+
+
 PRETRAINED_MODEL_PATH = "shyamsn97/Mario-GPT2-700-context-length"
 
 
@@ -48,7 +53,8 @@ class MarioGPT(BaseMarioLM):
         )
         self.prompter = prompter
         if prompter is None:
-            self.prompter = Prompter(self.tokenizer)
+            #self.prompter = Prompter(self.tokenizer)
+            self.prompter = FlowerPrompter(self.tokenizer)
 
     def generate_seed(self, length: int, batch_size: Optional[int] = None):
         seed = self.tokenizer("X", return_tensors="pt").input_ids.squeeze()
