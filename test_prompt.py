@@ -8,10 +8,11 @@ from mario_gpt.flower_metric import count_flowers, calculate_crookedness_score
 
 import numpy as np
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 
-n_iterations = 1
-img_length = 10  # Set this to the desired image length
+n_iterations = 2
+img_length = 5  # Set this to the desired image length
 
 ### --- ###
 
@@ -46,8 +47,6 @@ def generated_to_rgb(generated_level):
     return token_to_rgb(rot_img, dataset.token_dict)[0]
 
 # -- Load model
-img_length = 30
-
 mario_lm = MarioLM(lm_path="FlowerGPT", tokenizer_path="FlowerGPT")
 dataset = MarioDataset(mario_lm.tokenizer, level_string=FLOWER_LEVEL) # for token conversion
 
@@ -63,17 +62,22 @@ n_cols = len(prompt_straight)
 flower_scores_iter = [[[] for _ in range(n_cols)] for _ in range(n_rows)]
 straight_scores_iter = [[[] for _ in range(n_cols)] for _ in range(n_rows)]
 
+total_iterations = n_rows * n_cols * n_iterations
+pbar = tqdm(total=total_iterations)
 # Generate and Test
 for i in range(n_rows):
     for j in range(n_cols):
-        for k in range(n_iterations):
+        flower_scores_iter[i][j] = []
+        straight_scores_iter[i][j] = []
+        
+        for _ in range(n_iterations):
             # Generate
             prompts = [f"{prompt_flower[i]} flowers, {prompt_straight[j]} straight"]
             generated_level = mario_lm.sample(
                 prompts=prompts,
                 num_steps=14*img_length,
                 temperature=1.0,
-                use_tqdm=True
+                use_tqdm=False
             )
             # Test
             image = generated_to_rgb(generated_level)
@@ -83,12 +87,15 @@ for i in range(n_rows):
             # Append scores to lists
             flower_scores_iter[i][j].append(n_flowers)
             straight_scores_iter[i][j].append(straightness)
+            
+            pbar.update(1)
+pbar.close()
 
 # Save score lists to single pickle file for later analysis
 import pickle
 with open("test_prompt.pkl", "wb") as f:
     pickle.dump((flower_scores_iter, straight_scores_iter), f)
-    
+
 
 
 # Display Box Plots
