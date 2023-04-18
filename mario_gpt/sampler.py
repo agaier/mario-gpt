@@ -229,7 +229,6 @@ class GPTSampler:
             else:
                 bar = tqdm(np.arange(num_steps))
 
-            print(f"Height: {height}")
             with torch.no_grad():
                 for i in bar:
                     inp = out_tensor * 1
