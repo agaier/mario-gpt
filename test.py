@@ -2,11 +2,6 @@ import torch
 from mario_gpt import MarioDataset, MarioLM
 from mario_gpt.utils import view_level, convert_level_to_png, join_list_of_list, characterize
 
-import torch
-from mario_gpt import MarioDataset, MarioLM
-from mario_gpt.utils import view_level, convert_level_to_png, join_list_of_list, characterize
-
-
 # Load Model
 mario_lm = MarioLM()
 
