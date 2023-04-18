@@ -42,25 +42,26 @@ class SampleOutput:
         # batch = 1
         level = None
         img = None
+        sample_predictions_img = None
 
         try:
             level = view_level(level_tensor, tokenizer)
-            img = convert_level_to_png(level)[0]
+            #img = convert_level_to_png(level)[0]
         except Exception as e:
             print(
                 f"Failed to generate string or image representation for full level! Got error {e}"
             )
             level = None
-            img = None
+            #img = None
         try:
             sample_predictions_str = view_level(sample_predictions_tensor, tokenizer)
-            sample_predictions_img = convert_level_to_png(sample_predictions_str)[0]
+            #sample_predictions_img = convert_level_to_png(sample_predictions_str)[0]
         except Exception as e:
             print(
                 f"Failed to generate string or image representation for sampled predictions! Got error {e}"
             )
             sample_predictions_str = None
-            sample_predictions_img = None
+            #sample_predictions_img = None
 
         prompt = None
         if prompter is not None:
