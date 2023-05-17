@@ -52,9 +52,9 @@ class MarioGPT(BaseMarioLM):
             tokenizer_kwargs,
         )
         self.prompter = prompter
-        if prompter is None:
+        #if prompter is None:
             #self.prompter = Prompter(self.tokenizer)
-            self.prompter = FlowerPrompter(self.tokenizer)
+            #self.prompter = FlowerPrompter(self.tokenizer)
 
     def generate_seed(self, length: int, batch_size: Optional[int] = None):
         seed = self.tokenizer("X", return_tensors="pt").input_ids.squeeze()

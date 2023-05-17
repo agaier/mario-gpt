@@ -121,29 +121,37 @@ class MarioGPTTrainer:
         scheduler: Any,
         batch_size: int = 4,
     ):
+        # -- Prepare Device and Initialize Training Loss -------------------- -- #
         device = accelerator.device
         total_train_loss = 0
+
+        # -- Generate Batch Indices ----------------------------------------- -- #
         indices = list(
             torch.randint(low=0, high=len(train_dataset), size=(batch_size,)).long()
         )
+
+        # -- Extract Batch from Dataset ------------------------------------- -- #
         batch = train_dataset[indices]
         b_input_ids = batch[0].view(batch_size, -1).to(device)
         b_labels = batch[0].view(batch_size, -1).to(device)
         attention_masks = batch[1].to(device)
 
+        # -- Generate Encoder Hidden States --------------------------------- -- #
         encoder_hidden_states = None
-        str_levels = []
         encoder_hidden_states = []
-        for level in b_input_ids:
-            _, encoder_hidden_state, _, str_level = self.mario_lm.prompter(level)
-            str_levels.append(str_level)
+        #for level in b_input_ids:
+        for idx, level in enumerate(b_input_ids):
+            index = int(indices[idx])
+            _, encoder_hidden_state, _ = self.mario_lm.prompter(index)
             encoder_hidden_states.append(encoder_hidden_state)
         encoder_hidden_states = torch.stack(encoder_hidden_states, dim=0).view(
             batch_size, 1, -1
-        )
+        ).to(device)
 
+        # -- Model Forward Pass and Gradient Accumulation ------------------- -- #
         with accelerator.accumulate(model):
-            model.zero_grad()
+            model.zero_grad()  # Clear model gradients
+            # Forward pass
             outputs = model(
                 input_ids=b_input_ids.to(device),
                 labels=b_labels,
@@ -151,21 +159,25 @@ class MarioGPTTrainer:
                 encoder_hidden_states=encoder_hidden_states,
                 token_type_ids=None,
             )
-            loss = outputs.loss
+            loss = outputs.loss  # Extract loss
 
+            # Accumulate loss
             batch_loss = loss.item()
             total_train_loss += batch_loss
 
+            # Backward pass
             loss.backward()
-            optimizer.step()
-            scheduler.step()
+            optimizer.step()  # Update model parameters
+            scheduler.step()  # Update learning rate scheduler
 
+        # -- Store Gradients for Each Parameter ---------------------------- -- #
         grad_dict = {}
         for n, W in model.named_parameters():
             if W.grad is not None:
                 grad_dict["{}_grad".format(n)] = float(torch.sum(W.grad).item())
 
         return total_train_loss / batch_size, grad_dict
+
 
     def train(
         self,
@@ -233,3 +245,74 @@ class MarioGPTTrainer:
                 model.train()
             if (i + 1) % self.config.save_iteration == 0:
                 self.mario_lm.save_model(checkpoint_path, i)
+
+
+    # -- Unused ----------------------------------------------------------- -- #
+    def train_iter_with_prompt_eval(
+            self,
+            accelerator: Accelerator,
+            model: PreTrainedModel,
+            train_dataset: MarioDataset,
+            optimizer: Any,
+            scheduler: Any,
+            batch_size: int = 4,
+        ):
+            """Original train_iter function from mario_gpt/trainer.py
+            - Reevalutates each sample with prompter to get scores
+            """
+            # -- Prepare Device and Initialize Training Loss -------------------- -- #
+            device = accelerator.device
+            total_train_loss = 0
+
+            # -- Generate Batch Indices ----------------------------------------- -- #
+            indices = list(
+                torch.randint(low=0, high=len(train_dataset), size=(batch_size,)).long()
+            )
+
+            # -- Extract Batch from Dataset ------------------------------------- -- #
+            batch = train_dataset[indices]
+            b_input_ids = batch[0].view(batch_size, -1).to(device)
+            b_labels = batch[0].view(batch_size, -1).to(device)
+            attention_masks = batch[1].to(device)
+
+            # -- Generate Encoder Hidden States --------------------------------- -- #
+            encoder_hidden_states = None
+            str_levels = []
+            encoder_hidden_states = []
+            for level in b_input_ids:
+                _, encoder_hidden_state, _ = self.mario_lm.prompter(level)
+                str_levels.append(str_level)
+                encoder_hidden_states.append(encoder_hidden_state)
+            encoder_hidden_states = torch.stack(encoder_hidden_states, dim=0).view(
+                batch_size, 1, -1
+            )
+
+            # -- Model Forward Pass and Gradient Accumulation ------------------- -- #
+            with accelerator.accumulate(model):
+                model.zero_grad()  # Clear model gradients
+                # Forward pass
+                outputs = model(
+                    input_ids=b_input_ids.to(device),
+                    labels=b_labels,
+                    attention_mask=attention_masks,
+                    encoder_hidden_states=encoder_hidden_states,
+                    token_type_ids=None,
+                )
+                loss = outputs.loss  # Extract loss
+
+                # Accumulate loss
+                batch_loss = loss.item()
+                total_train_loss += batch_loss
+
+                # Backward pass
+                loss.backward()
+                optimizer.step()  # Update model parameters
+                scheduler.step()  # Update learning rate scheduler
+
+            # -- Store Gradients for Each Parameter ---------------------------- -- #
+            grad_dict = {}
+            for n, W in model.named_parameters():
+                if W.grad is not None:
+                    grad_dict["{}_grad".format(n)] = float(torch.sum(W.grad).item())
+
+            return total_train_loss / batch_size, grad_dict
