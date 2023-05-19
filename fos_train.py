@@ -13,7 +13,7 @@ datset_path = '/home/gaiera/Code/NZB/tile_gen/data/fos_wfc.json'
 with open(datset_path, 'r') as f:
      raw = json.load(f)
      performance_lookup = raw['performance']
-prompter = FosPrompter(performance_lookup)
+prompter = FosPrompter(performance_lookup=performance_lookup)
 
 # Init GPT Model
 mario_lm = MarioLM(lm_path=BASE, tokenizer_path=BASE, prompter=prompter, context_len=980)
@@ -27,8 +27,7 @@ config = TrainingConfig(save_iteration=10000, output_dir=NAME)
 trainer = MarioGPTTrainer(mario_lm, dataset, config)
 
 # Train
-#n_train = 50000
-n_train = 5
+n_train = 20000
 trainer.train(n_train, batch_size=1)
 
 # Save Model and Tokenizer

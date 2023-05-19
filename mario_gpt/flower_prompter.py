@@ -23,8 +23,8 @@ def view_flowers(level: str):
 
 # Threshold values
 STATISTICS = {
-    "flowers": np.array([4.0, 6.0, 8.0]),
-    "straight": np.array([251.0, 268.0, 293.0]),
+    "flowers": np.array([3.0, 5.0, 7.0]),
+    "straight": np.array([240.0, 250.0, 260.0]),
 }
 
 FEATURE_EXTRACTION_MODEL = "facebook/bart-base"
@@ -116,6 +116,9 @@ class FlowerPrompter:
         straight_counts = []
         for i in range(len(dataset)):
             level, _ = dataset[i]
+            # Level is right side up flowers
+            # -- is expecting the flattened level version tilted
+            #  plt.imshow(level.reshape(50,14));plt.savefig('out.png') <-- should be turned clock 90 degrees
             str_level = self._flatten_level(view_level(level, dataset.tokenizer))
 
             flower_count = self.count_flowers(str_level)
@@ -143,7 +146,7 @@ class FlowerPrompter:
         else:
             fig = ax.get_figure()
         
-        gridsize = (8,6)
+        gridsize = (7,7)
         hb = ax.hexbin(df['straight_count'], df['flower_count'], gridsize=gridsize, cmap='cividis', edgecolor='gray', linewidth=0.5)
         ax.set_xlabel('Straightness')
         ax.set_ylabel('Flower Count')

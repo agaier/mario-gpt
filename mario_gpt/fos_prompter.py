@@ -33,7 +33,7 @@ FEATURE_EXTRACTION_MODEL = "facebook/bart-base"
 class FosPrompter:
     def __init__(
         self,
-        performance_lookup,
+        performance_lookup=None,
         prompter_model: str = FEATURE_EXTRACTION_MODEL,
         statistics: Optional[Dict[str, Any]] = None,
     ):

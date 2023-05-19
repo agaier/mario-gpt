@@ -1,18 +1,20 @@
 import torch
 from mario_gpt import MarioDataset, MarioLM, TrainingConfig, MarioGPTTrainer
 from mario_gpt.utils import view_level, convert_level_to_png, join_list_of_list, characterize
+
+
+# Flower Domains
 from mario_gpt.flower_level import FLOWER_LEVEL
-
 from mario_gpt.flower_metric import count_flowers, calculate_crookedness_score
-
+from mario_gpt.flower_dataset import MarioDataset
 
 import numpy as np
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 
-n_iterations = 2
-img_length = 5  # Set this to the desired image length
+n_iterations = 16
+img_length = 50  # Set this to the desired image length
 
 ### --- ###
 
@@ -47,8 +49,8 @@ def generated_to_rgb(generated_level):
     return token_to_rgb(rot_img, dataset.token_dict)[0]
 
 # -- Load model
-mario_lm = MarioLM(lm_path="FlowerGPT", tokenizer_path="FlowerGPT")
-dataset = MarioDataset(mario_lm.tokenizer, level_string=FLOWER_LEVEL) # for token conversion
+mario_lm = MarioLM(lm_path="FlowerGPT", tokenizer_path="FlowerGPT_wfc2")
+dataset = MarioDataset(mario_lm.tokenizer, level_string='flowers_dataset.json') # for token conversion
 
 # -- Generate test levels
 # Prompts
@@ -64,6 +66,10 @@ straight_scores_iter = [[[] for _ in range(n_cols)] for _ in range(n_rows)]
 
 total_iterations = n_rows * n_cols * n_iterations
 pbar = tqdm(total=total_iterations)
+
+device = torch.device('cuda')
+mario_lm = mario_lm.to(device)
+
 # Generate and Test
 for i in range(n_rows):
     for j in range(n_cols):
@@ -98,25 +104,25 @@ with open("test_prompt.pkl", "wb") as f:
 
 
 
-# Display Box Plots
-fig, ax = plt.subplots(1, 2, figsize=(10, 6))
+# # Display Box Plots
+# fig, ax = plt.subplots(1, 2, figsize=(10, 6))
 
-# Flower Scores
-flower_data = [np.array(flower_scores_iter)[:, j, :].flatten() for j in range(n_cols)]
-bp = ax[0].boxplot(flower_data)
-ax[0].set_title("Number of Flowers")
-ax[0].set_xlabel("Straightness")
-ax[0].set_xticks(range(1, n_cols + 1))
-ax[0].set_xticklabels(prompt_flower)
-ax[0].set_ylabel("Flowers")
+# # Flower Scores
+# flower_data = [np.array(flower_scores_iter)[j, :, :].flatten() for j in range(n_cols)]
+# bp = ax[0].boxplot(flower_data)
+# ax[0].set_title("Number of Flowers")
+# ax[0].set_xlabel("Straightness")
+# ax[0].set_xticks(range(1, n_cols + 1))
+# ax[0].set_xticklabels(prompt_flower)
+# ax[0].set_ylabel("Flowers")
 
-# Straightness Scores
-straight_data = [np.array(straight_scores_iter)[:, j, :].flatten() for j in range(n_cols)]
-bp = ax[1].boxplot(straight_data)
-ax[1].set_title("Straightness")
-ax[1].set_xlabel("Straightness")
-ax[1].set_xticks(range(1, n_cols + 1))
-ax[1].set_xticklabels(prompt_straight)
-ax[1].set_ylabel("Straightness Score")
+# # Straightness Scores
+# straight_data = [np.array(straight_scores_iter)[:, j, :].flatten() for j in range(n_cols)]
+# bp = ax[1].boxplot(straight_data)
+# ax[1].set_title("Straightness")
+# ax[1].set_xlabel("Straightness")
+# ax[1].set_xticks(range(1, n_cols + 1))
+# ax[1].set_xticklabels(prompt_straight)
+# ax[1].set_ylabel("Straightness Score")
 
-plt.savefig("test_prompt.png")
+# plt.savefig("test_prompt.png")

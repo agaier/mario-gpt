@@ -42,44 +42,19 @@ def map_array_to_colors(array):
 
 
 def map_to_color(char):
-    colors = {
-        'B': [0, 170, 0],
-        'C': [185, 122, 87],
-        'D': [255, 242, 0],
-        'E': [191, 232, 242]
-    }
     # colors = {
-    #     'A': [0, 170, 0],
-    #     'B': [185, 122, 87],
-    #     'C': [255, 242, 0],
-    #     'D': [191, 232, 242]
+    #     'B': [0, 170, 0],
+    #     'C': [185, 122, 87],
+    #     'D': [255, 242, 0],
+    #     'E': [191, 232, 242]
     # }
+    colors = {
+        'A': [0, 170, 0],
+        'B': [185, 122, 87],
+        'C': [255, 242, 0],
+        'D': [191, 232, 242]
+    }
     return colors.get(char, [255, 0, 0])  
-
-# def token_to_rgb(token_array, token_dict, colors=None):
-#     # Create a reverse dictionary mapping token values to keys
-#     reverse_token_dict = {int(v.item()): k for k, v in token_dict.items()}
-
-#     # Use ascending integers as colors if not provided
-#     if colors is None:
-#         colors = [
-#             [0, 170, 0],       
-#             [185, 122, 87],      
-#             [255, 242, 0],     
-#             [191, 232, 242],   
-#         ]        
-
-#     # Create a dictionary mapping token values to colors
-#     color_dict = {token_value: color for token_value, color in zip(reverse_token_dict.keys(), colors)}
-
-#     # Function to map token values to colors or red if not in token_dict
-#     def map_to_color(token_value):
-#         return color_dict.get(token_value, [255, 0, 0])
-
-#     # Create a 3D array of RGB colors based on the token_array and color_dict using nested list comprehension
-#     rgb_array = np.array([[[map_to_color(token_value) for token_value in row] for row in token_array]])
-
-#     return rgb_array
 
 def count_flowers(array):
     """

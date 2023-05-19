@@ -63,9 +63,10 @@ class SampleOutput:
             sample_predictions_str = None
             #sample_predictions_img = None
 
+        # -- Don't check prompt here, we can do it somewhere else
         prompt = None
-        if prompter is not None:
-            prompt = prompter(level_tensor)[0]
+        # if prompter is not None:
+        #     prompt = prompter(level_tensor)[0]
 
         return SampleOutput(
             level,
@@ -187,8 +188,12 @@ class GPTSampler:
         return_tensor: bool = False,
         height: int = 14,
     ):
+
+        # -- Set Model to Evaluation Mode ---------------------------------- -- #
         self.mario_lm.eval()
         context_len = self.context_len - 28
+
+        # -- Seed Initialization ------------------------------------------ -- #
         with torch.no_grad():
             if seed is None:
                 seed = self.mario_lm.generate_seed(1, batch_size=len(prompts)).to(
@@ -203,6 +208,8 @@ class GPTSampler:
                 # if we pass in a single seed vector, then we repeat for each prompt
                 # Otherwise, we treat inputs as separate seed-prompt pairs
                 out_tensor = out_tensor.view(1, -1).repeat(len(prompts), 1)
+
+        # -- Encoder Hidden States Initialization ------------------------- -- #
             if encoder_hidden_states is None:
                 if prompts is not None:
                     encoder_hidden_states = torch.stack(
@@ -224,6 +231,8 @@ class GPTSampler:
             encoder_hidden_states = encoder_hidden_states.view(
                 out_tensor.shape[0], 1, -1
             )
+
+        # -- Generation Loop ---------------------------------------------- -- #
             if not self.use_tqdm:
                 bar = np.arange(num_steps)
             else:
@@ -233,7 +242,6 @@ class GPTSampler:
                 for i in bar:
                     inp = out_tensor * 1
                     if len(out_tensor.shape) > 0 and out_tensor.shape[-1] > context_len:
-                        #diff = inp.shape[-1] % 14  # height of mario level
                         diff = inp.shape[-1] % height  # height of mario level
                         ctx = context_len + diff
                         inp = inp[:, -ctx:] * 1
@@ -250,19 +258,26 @@ class GPTSampler:
                         )
             if self.use_tqdm:
                 bar.close()
+
+        # -- Sample Output Creation --------------------------------------- -- #
         sample_out = SampleOutput.from_level_predictions(
             out_tensor,
             out_tensor[:, -num_steps:],
             self.mario_lm.tokenizer,
             self.mario_lm.prompter,
         )
+        
+        # -- Return to Training Mode -------------------------------------- -- #
         self.mario_lm.train()
+
         if return_tensor:
             return sample_out, out_tensor
         return sample_out
 
     def __call__(self, *args, **kwargs):
+        # -- Wrapper for the Sample Method -------------------------------- -- #
         return self.sample(*args, **kwargs)
+
 
 
 class BertSampler:
