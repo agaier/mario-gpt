@@ -80,24 +80,21 @@ def test_prompt(model_path="FosGPT_wfc1", n_iterations=16):
     # Prompts
     prompt_open_area = ["no", "a little", "some", "a lot of"]
     prompt_clearance = ["no", "a little", "some", "a lot of"]
-    #prompt_open_area = ["no", "a little", "some", "a lot of"]
-    #prompt_clearance = ["no"]
 
     # Initialize dictionaries to store scores for each iteration
     open_area_scores_iter = {prompt: [] for prompt in prompt_open_area}
     clearance_scores_iter = {prompt: [] for prompt in prompt_clearance}
-    # Initialize dictionary to store layouts for each combination of prompts
+    # Initialize dictionaries to store layouts and their scores for each combination of prompts
     named_layouts_iter = {f"{prompt_o} open_area, {prompt_c} clearance": [] for prompt_o in prompt_open_area for prompt_c in prompt_clearance}
-
+    layout_scores_iter = {f"{prompt_o} open_area, {prompt_c} clearance": [] for prompt_o in prompt_open_area for prompt_c in prompt_clearance}
 
     total_iterations = len(prompt_open_area) * len(prompt_clearance) * n_iterations
     pbar = tqdm(total=total_iterations)
 
-    # -- Generate test layouts ------------------------------------------ ------ -- #
+    # -- Generate test layouts ------------------------------------------------ -- #
     # Generate and Test
     for prompt_o in prompt_open_area:
         for prompt_c in prompt_clearance:
-            
             for _ in range(n_iterations):
                 # Generate
                 prompts = [f"{prompt_o} open_area, {prompt_c} clearance"]
@@ -111,12 +108,11 @@ def test_prompt(model_path="FosGPT_wfc1", n_iterations=16):
                 # Append scores to lists
                 open_area_scores_iter[prompt_o].append(performance['area_open'])
                 clearance_scores_iter[prompt_c].append(performance['clearance'])
-                
-                # Append layout to list
-                named_layouts_iter[f"{prompt_o} open_area, {prompt_c} clearance"].append(named_layout)
-                #named_layouts_iter = {f"{prompt_o} open_area, {prompt_c} clearance": [] for prompt_o in prompt_open_area for prompt_c in prompt_clearance}
 
-                
+                # Append layout and its scores to lists
+                named_layouts_iter[prompts[0]].append(named_layout)
+                layout_scores_iter[prompts[0]].append([performance['area_open'], performance['clearance']])
+
                 pbar.update(1)
     pbar.close()
 
@@ -125,11 +121,13 @@ def test_prompt(model_path="FosGPT_wfc1", n_iterations=16):
         "open_area_scores": convert_types(open_area_scores_iter),
         "clearance_scores": convert_types(clearance_scores_iter),
         "named_layouts": convert_types(named_layouts_iter),
+        "layout_scores": convert_types(layout_scores_iter),
     }
 
     # Save scores and layouts to a single JSON file for later analysis
     with open("test_prompt.json", "w") as f:
         json.dump(results_dict, f)
+
 
 
 
